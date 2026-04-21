@@ -1,323 +1,144 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
-import {
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React from 'react';
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+// Import the global user hook
+import { useUser } from '../../UserContext'; 
 
-const roomTypes = [
-  "Classroom",
-  "Computer Lab",
-  "Science Lab",
-  "Auditorium",
-  "Seminar Hall",
-];
-
-export default function App() {
-  const teacherName = "Dr. Patterson";
+export default function HomeScreen() {
   const router = useRouter();
+  
+  // 1. Hook into the Global State
+  const { user } = useUser();
 
-  // --- STATE MANAGEMENT ---
-  const [selectedTypes, setSelectedTypes] = useState([]);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  // Dummy data tailored to BMSCE
+  const availableNearYou = [
+    { id: '1', room: 'UG-LAB 1', block: 'PJA Block', time: 'Available for 2 hrs' },
+    { id: '2', room: 'APS-102', block: 'APS Block', time: 'Available all day' },
+  ];
 
-  // 1. New State for Dark Mode! Starts as false (Light Mode)
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  // --- LOGIC FUNCTIONS ---
-  const toggleRoomType = (type) => {
-    if (selectedTypes.includes(type)) {
-      setSelectedTypes(selectedTypes.filter((t) => t !== type));
-    } else {
-      setSelectedTypes([...selectedTypes, type]);
-    }
-  };
-
-  const onChangeDate = (event, selectedDate) => {
-    setShowDatePicker(false);
-    if (selectedDate) setCurrentDate(selectedDate);
-  };
-
-  const onChangeTime = (event, selectedTime) => {
-    setShowTimePicker(false);
-    if (selectedTime) setCurrentDate(selectedTime);
-  };
-
-  const formattedDate = currentDate
-    .toLocaleDateString("en-GB")
-    .replace(/\//g, "-");
-  const formattedTime = currentDate.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  // --- RENDER UI ---
-  // We dynamically select styles based on the isDarkMode variable
   return (
-    <SafeAreaView
-      style={[styles.container, isDarkMode && styles.darkContainer]}
-    >
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        
+        {/* Welcome Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Good morning,</Text>
+            {/* 2. DYNAMIC NAME: Automatically shows Dr. Sharma or Rahul Kumar */}
+            <Text style={styles.name}>{user.name}</Text>
+          </View>
+          <TouchableOpacity onPress={() => router.push('/profile')} style={styles.avatarMini}>
+            {/* 3. DYNAMIC INITIALS: Automatically shows DS or RK */}
+            <Text style={styles.avatarText}>{user.initials}</Text>
+          </TouchableOpacity>
+        </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Header - Always stays blue to match your brand */}
-        <View style={styles.headerContainer}>
-          <View style={styles.topRow}>
-            <Text style={styles.logoText}>ClassFound</Text>
-            <View style={styles.headerIconsRow}>
-              {/* 2. The Interactive Moon/Sun Button! */}
-              <TouchableOpacity onPress={() => setIsDarkMode(!isDarkMode)}>
-                <Feather
-                  name={isDarkMode ? "sun" : "moon"} // Changes icon
-                  size={24}
-                  color="white"
-                  style={styles.headerIcon}
-                />
-              </TouchableOpacity>
+        {/* Quick Action Card */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroTextContainer}>
+            <Text style={styles.heroTitle}>Need a space?</Text>
+            <Text style={styles.heroSubtitle}>Find an empty lab or classroom for your group study.</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.heroButton}
+            onPress={() => router.push('/search')}
+          >
+            <Text style={styles.heroButtonText}>Find a Room Now</Text>
+            <Ionicons name="arrow-forward" size={16} color="#005A9C" />
+          </TouchableOpacity>
+        </View>
 
-              <Ionicons name="person-outline" size={26} color="white" />
+        {/* Quick Recommendations */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Available Near You</Text>
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalList}>
+          {availableNearYou.map((item) => (
+            <View key={item.id} style={styles.roomCard}>
+              <View style={styles.roomHeader}>
+                <Ionicons name="location-outline" size={16} color="#666" />
+                <Text style={styles.blockText}>{item.block}</Text>
+              </View>
+              <Text style={styles.roomName}>{item.room}</Text>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{item.time}</Text>
+              </View>
             </View>
-          </View>
-          <Text style={styles.greetingText}>Good Morning,</Text>
-          <Text style={styles.nameText}>{teacherName}</Text>
-        </View>
+          ))}
+        </ScrollView>
 
-        {/* Main Body */}
-        <View style={styles.bodyContainer}>
-          {/* Dynamic Text Color */}
-          <Text
-            style={[styles.sectionTitle, isDarkMode && styles.darkTextPrimary]}
-          >
-            Find Available Rooms
-          </Text>
-
-          {/* DATE INPUT */}
-          <Text
-            style={[styles.inputLabel, isDarkMode && styles.darkTextSecondary]}
-          >
-            Date
-          </Text>
-          <TouchableOpacity
-            style={[styles.inputBox, isDarkMode && styles.darkInputBox]}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Feather
-              name="calendar"
-              size={20}
-              color={isDarkMode ? "#9CA3AF" : "#6B7280"}
-            />
-            <Text
-              style={[styles.inputText, isDarkMode && styles.darkTextPrimary]}
-            >
-              {formattedDate}
-            </Text>
-          </TouchableOpacity>
-
-          {showDatePicker && (
-            <DateTimePicker
-              value={currentDate}
-              mode="date"
-              display={Platform.OS === "ios" ? "spinner" : "default"}
-              onChange={onChangeDate}
-            />
-          )}
-
-          {/* TIME SLOT INPUT */}
-          <Text
-            style={[styles.inputLabel, isDarkMode && styles.darkTextSecondary]}
-          >
-            Time Slot
-          </Text>
-          <TouchableOpacity
-            style={[styles.inputBox, isDarkMode && styles.darkInputBox]}
-            onPress={() => setShowTimePicker(true)}
-          >
-            <Feather
-              name="clock"
-              size={20}
-              color={isDarkMode ? "#9CA3AF" : "#6B7280"}
-            />
-            <Text
-              style={[styles.inputText, isDarkMode && styles.darkTextPrimary]}
-            >
-              {formattedTime}
-            </Text>
-          </TouchableOpacity>
-
-          {showTimePicker && (
-            <DateTimePicker
-              value={currentDate}
-              mode="time"
-              display={Platform.OS === "ios" ? "spinner" : "default"}
-              onChange={onChangeTime}
-            />
-          )}
-
-          {/* ROOM TYPE FILTERS */}
-          <Text
-            style={[styles.inputLabel, isDarkMode && styles.darkTextSecondary]}
-          >
-            Room Type (Optional)
-          </Text>
-          <View style={styles.pillsContainer}>
-            {roomTypes.map((type) => {
-              const isSelected = selectedTypes.includes(type);
-              return (
-                <TouchableOpacity
-                  key={type}
-                  style={[
-                    styles.pillBox,
-                    isSelected
-                      ? styles.pillBoxSelected
-                      : isDarkMode
-                        ? styles.darkPillBoxUnselected
-                        : styles.pillBoxUnselected,
-                  ]}
-                  onPress={() => toggleRoomType(type)}
-                >
-                  <Text
-                    style={[
-                      styles.pillText,
-                      isSelected
-                        ? styles.pillTextSelected
-                        : isDarkMode
-                          ? styles.darkPillTextUnselected
-                          : styles.pillTextUnselected,
-                    ]}
-                  >
-                    {type}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
       </ScrollView>
-
-      {/* Find Rooms Button */}
-      <View style={styles.bottomButtonContainer}>
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => {
-            router.push({
-              pathname: "/results",
-              params: {
-                date: formattedDate,
-                time: formattedTime,
-                types: JSON.stringify(selectedTypes),
-              },
-            });
-          }}
-        >
-          <Feather
-            name="search"
-            size={20}
-            color="white"
-            style={styles.searchIcon}
-          />
-          <Text style={styles.primaryButtonText}>Find Available Rooms</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }
 
-// --- STYLING RULES ---
 const styles = StyleSheet.create({
-  // Light Mode Styles (Default)
-  container: { flex: 1, backgroundColor: "#F9FAFB" },
-  scrollContent: { paddingBottom: 100 },
-  headerContainer: {
-    backgroundColor: "#1E3A8A",
-    padding: 20,
-    paddingTop: 50,
-    borderBottomLeftRadius: 15,
-    borderBottomRightRadius: 15,
+  container: { flex: 1, backgroundColor: '#F4F6F8' },
+  scrollContent: { padding: 20 },
+header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 30, 
+    marginTop: 50, // Give it plenty of room from the top of the screen
+},
+  greeting: { fontSize: 16, color: '#666' },
+  name: { fontSize: 28, fontWeight: 'bold', color: '#1A1A1A' },
+  avatarMini: { 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
+    backgroundColor: '#005A9C', 
+    justifyContent: 'center', 
+    alignItems: 'center' 
   },
-  topRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
+  avatarText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+  
+  heroCard: { 
+    backgroundColor: '#005A9C', 
+    borderRadius: 16, 
+    padding: 24, 
+    marginBottom: 30, 
+    shadowColor: '#005A9C', 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.3, 
+    shadowRadius: 8, 
+    elevation: 5 
   },
-  logoText: { color: "#FFFFFF", fontSize: 22, fontWeight: "bold" },
-  headerIconsRow: { flexDirection: "row", alignItems: "center" },
-  headerIcon: { marginRight: 20 },
-  greetingText: { color: "#E0E7FF", fontSize: 14, marginTop: 10 },
-  nameText: { color: "#FFFFFF", fontSize: 24, fontWeight: "bold" },
-  bodyContainer: { padding: 20 },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1E3A8A",
-    marginBottom: 20,
-    marginTop: 10,
+  heroTextContainer: { marginBottom: 20 },
+  heroTitle: { color: '#FFF', fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
+  heroSubtitle: { color: '#E3F2FD', fontSize: 14, lineHeight: 20 },
+  heroButton: { 
+    backgroundColor: '#FFF', 
+    alignSelf: 'flex-start', 
+    paddingVertical: 12, 
+    paddingHorizontal: 20, 
+    borderRadius: 24, 
+    flexDirection: 'row', 
+    alignItems: 'center' 
   },
-  inputLabel: {
-    fontSize: 14,
-    color: "#4B5563",
-    marginBottom: 8,
-    fontWeight: "500",
-  },
-  inputBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F3F4F6",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-  inputText: { marginLeft: 10, fontSize: 16, color: "#111827" },
-  pillsContainer: { flexDirection: "row", flexWrap: "wrap", marginTop: 5 },
-  pillBox: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginRight: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-  },
-  pillBoxUnselected: { backgroundColor: "#F3F4F6", borderColor: "#E5E7EB" },
-  pillBoxSelected: { backgroundColor: "#D1E0FF", borderColor: "#1E3A8A" },
-  pillText: { fontSize: 14, fontWeight: "500" },
-  pillTextUnselected: { color: "#4B5563" },
-  pillTextSelected: { color: "#1E3A8A" },
-  bottomButtonContainer: {
-    position: "absolute",
-    bottom: 20,
-    left: 20,
-    right: 20,
-  },
-  primaryButton: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#1E3A8A",
-    padding: 18,
-    borderRadius: 12,
-    elevation: 4,
-  },
-  searchIcon: { marginRight: 10 },
-  primaryButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
+  heroButtonText: { color: '#005A9C', fontWeight: 'bold', marginRight: 8 },
 
-  // --- DARK MODE OVERRIDES ---
-  darkContainer: { backgroundColor: "#111827" }, // Deep slate background
-  darkTextPrimary: { color: "#F9FAFB" }, // White text
-  darkTextSecondary: { color: "#9CA3AF" }, // Light grey text
-  darkInputBox: { backgroundColor: "#1F2937" }, // Darker grey for input boxes
-  darkPillBoxUnselected: { backgroundColor: "#1F2937", borderColor: "#374151" },
-  darkPillTextUnselected: { color: "#D1D5DB" },
+  sectionHeader: { marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1A1A1A' },
+  horizontalList: { overflow: 'visible' },
+  roomCard: { 
+    backgroundColor: '#FFF', 
+    width: 200, 
+    padding: 16, 
+    borderRadius: 16, 
+    marginRight: 16, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.05, 
+    shadowRadius: 4, 
+    elevation: 2 
+  },
+  roomHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  blockText: { color: '#666', fontSize: 12, marginLeft: 4 },
+  roomName: { fontSize: 18, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 12 },
+  badge: { backgroundColor: '#E8F5E9', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6, alignSelf: 'flex-start' },
+  badgeText: { color: '#2E7D32', fontSize: 12, fontWeight: '600' },
 });

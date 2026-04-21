@@ -1,18 +1,12 @@
-import { Stack } from "expo-router";
-
+import { Stack } from 'expo-router';
+import { UserProvider } from '../UserContext';
 export default function RootLayout() {
   return (
-    // The Stack acts like a deck of cards for your screens
-    // headerShown: false removes the ugly default grey bars at the top
-    <Stack screenOptions={{ headerShown: false }}>
-      {/* 1. The Login Screen (Because it's named "index", it loads first!) */}
-      <Stack.Screen name="index" />
-
-      {/* 2. The Dashboard Tabs */}
-      <Stack.Screen name="(tabs)" />
-
-      {/* 3. The Search Results Screen */}
-      <Stack.Screen name="results" />
-    </Stack>
+    <UserProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        {/* This tells the app to find the (tabs) folder and render its layout */}
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+    </UserProvider>
   );
 }
