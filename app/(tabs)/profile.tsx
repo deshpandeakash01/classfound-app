@@ -1,28 +1,49 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useUser } from '../../UserContext';
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { supabase } from "../../supabase";
+import { useUser } from "../../UserContext";
 
 export default function ProfileScreen() {
-  const { user, setUserRole } = useUser();
-  const [studentEmail, setStudentEmail] = useState('');
+  const { user } = useUser();
+  const [studentEmail, setStudentEmail] = useState("");
+  const router = useRouter();
 
-  const toggleRole = () => {
-    const newRole = user.role === 'faculty' ? 'student' : 'faculty';
-    setUserRole(newRole);
+  // ✅ Null user handling
+  if (!user) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#005A9C" />
+      </View>
+    );
+  }
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      Alert.alert("Logout Failed", error.message);
+    } else {
+      router.replace("/auth");
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Dev Toggle sits at the very top */}
-      <TouchableOpacity style={styles.devToggle} onPress={toggleRole}>
-        <Text style={styles.devToggleText}>
-          Dev Mode: Switch to {user.role === 'faculty' ? 'Student' : 'Faculty'} View
-        </Text>
-      </TouchableOpacity>
-
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}>
         {/* Header Section */}
         <View style={styles.headerContainer}>
           <View style={styles.avatar}>
@@ -30,21 +51,40 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.userName}>{user.name}</Text>
           <Text style={styles.userEmail}>{user.email}</Text>
-          <View style={[styles.roleBadge, user.role === 'faculty' ? styles.roleBadgeFaculty : styles.roleBadgeStudent]}>
-            <Text style={[styles.roleText, user.role === 'faculty' ? styles.roleTextFaculty : styles.roleTextStudent]}>
-              {user.role === 'faculty' ? 'Faculty' : 'Student'}
+          <View
+            style={[
+              styles.roleBadge,
+              user.role === "faculty"
+                ? styles.roleBadgeFaculty
+                : styles.roleBadgeStudent,
+            ]}>
+            <Text
+              style={[
+                styles.roleText,
+                user.role === "faculty"
+                  ? styles.roleTextFaculty
+                  : styles.roleTextStudent,
+              ]}>
+              {user.role === "faculty" ? "Faculty" : "Student"}
             </Text>
           </View>
         </View>
 
         {/* FACULTY ONLY SECTION: Assign CR Role */}
-        {user.role === 'faculty' && (
+        {user.role === "faculty" && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Faculty Controls</Text>
-            <Text style={styles.cardDescription}>Assign Class Representative (CR) privileges to a student.</Text>
+            <Text style={styles.cardDescription}>
+              Assign Class Representative (CR) privileges to a student.
+            </Text>
             <Text style={styles.inputLabel}>Student Email</Text>
             <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
+              <Ionicons
+                name="mail-outline"
+                size={20}
+                color="#666"
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 placeholder="student.cse24@bmsce.ac.in"
@@ -60,7 +100,7 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* My Bookings Section - Always visible now */}
+        {/* My Bookings Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>My Bookings</Text>
           <TouchableOpacity>
@@ -74,14 +114,16 @@ export default function ProfileScreen() {
               <Ionicons name="calendar-outline" size={32} color="#666" />
             </View>
             <Text style={styles.emptyStateTitle}>No Upcoming Bookings</Text>
-            <Text style={styles.emptyStateText}>Book lab slots or seminar halls for your next session.</Text>
+            <Text style={styles.emptyStateText}>
+              Book lab slots or seminar halls for your next session.
+            </Text>
             <TouchableOpacity style={styles.secondaryButton}>
               <Text style={styles.secondaryButtonText}>Schedule Now</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color="#D32F2F" />
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
@@ -91,91 +133,165 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#F4F6F8' 
+  container: {
+    flex: 1,
+    backgroundColor: "#F4F6F8",
   },
-  devToggle: { 
-    backgroundColor: '#FFE0B2', 
-    paddingVertical: 12, // Increased padding
-    paddingTop: 45,      // NEW: This pushes the text below the phone's notch/clock
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFCC80',
+  loaderContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  devToggleText: { 
-    fontSize: 12, 
-    color: '#E65100', 
-    fontWeight: 'bold' 
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
   },
-  scrollContent: { 
-    padding: 20, 
-    paddingBottom: 40 
+  headerContainer: {
+    alignItems: "center",
+    marginBottom: 24,
+    marginTop: 20,
   },
-  headerContainer: { 
-    alignItems: 'center', 
-    marginBottom: 24, 
-    marginTop: 20       // Added margin to separate from the dev bar
-  },
-  avatar: { 
-    width: 90,          // Slightly larger for better visual hierarchy
-    height: 90, 
-    borderRadius: 45, 
-    backgroundColor: '#005A9C', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    marginBottom: 16, 
+  avatar: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: "#005A9C",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  avatarText: { 
-    fontSize: 36, 
-    fontWeight: 'bold', 
-    color: '#FFF' 
+  avatarText: {
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#FFF",
   },
-  userName: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
-    color: '#1A1A1A' 
+  userName: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#1A1A1A",
   },
-  userEmail: { 
-    fontSize: 14, 
-    color: '#666', 
-    marginTop: 4, 
-    marginBottom: 12 
+  userEmail: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 4,
+    marginBottom: 12,
   },
-  roleBadge: { 
-    paddingHorizontal: 16, 
-    paddingVertical: 6, 
-    borderRadius: 20 
+  roleBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
-  roleBadgeFaculty: { backgroundColor: '#E3F2FD' },
-  roleBadgeStudent: { backgroundColor: '#EEEEEE' },
-  roleText: { fontSize: 12, fontWeight: '700' },
-  roleTextFaculty: { color: '#005A9C' },
-  roleTextStudent: { color: '#666666' },
-  
-  // Card styles remain the same
-  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, marginBottom: 24, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 },
-  cardDescription: { fontSize: 14, color: '#4A4A4A', marginBottom: 16, lineHeight: 20 },
-  inputLabel: { fontSize: 14, fontWeight: '600', color: '#1A1A1A', marginBottom: 8 },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F9FA', borderWidth: 1, borderColor: '#E0E0E0', borderRadius: 10, paddingHorizontal: 12, marginBottom: 16 },
+  roleBadgeFaculty: { backgroundColor: "#E3F2FD" },
+  roleBadgeStudent: { backgroundColor: "#EEEEEE" },
+  roleText: { fontSize: 12, fontWeight: "700" },
+  roleTextFaculty: { color: "#005A9C" },
+  roleTextStudent: { color: "#666666" },
+
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1A1A1A",
+    marginBottom: 8,
+  },
+  cardDescription: {
+    fontSize: 14,
+    color: "#4A4A4A",
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1A1A1A",
+    marginBottom: 8,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8F9FA",
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    marginBottom: 16,
+  },
   inputIcon: { marginRight: 10 },
-  input: { flex: 1, paddingVertical: 14, fontSize: 15, color: '#333' },
-  primaryButton: { backgroundColor: '#005A9C', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
-  primaryButtonText: { color: '#FFF', fontSize: 16, fontWeight: '600' },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#1A1A1A' },
-  linkText: { fontSize: 14, color: '#005A9C', fontWeight: '600' },
-  emptyState: { alignItems: 'center', paddingVertical: 15 },
-  iconCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#F4F6F8', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
-  emptyStateTitle: { fontSize: 16, fontWeight: '600', color: '#1A1A1A', marginBottom: 8 },
-  emptyStateText: { fontSize: 14, color: '#666', textAlign: 'center', lineHeight: 20 },
-  secondaryButton: { borderWidth: 1, borderColor: '#005A9C', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 24, marginTop: 16 },
-  secondaryButtonText: { color: '#005A9C', fontSize: 14, fontWeight: '600' },
-  logoutButton: { flexDirection: 'row', backgroundColor: '#FFF0F0', borderRadius: 12, paddingVertical: 16, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
-  logoutText: { color: '#D32F2F', fontSize: 16, fontWeight: '600', marginLeft: 8 },
+  input: { flex: 1, paddingVertical: 14, fontSize: 15, color: "#333" },
+  primaryButton: {
+    backgroundColor: "#005A9C",
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  primaryButtonText: { color: "#FFF", fontSize: 16, fontWeight: "600" },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#1A1A1A" },
+  linkText: { fontSize: 14, color: "#005A9C", fontWeight: "600" },
+  emptyState: { alignItems: "center", paddingVertical: 15 },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#F4F6F8",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1A1A1A",
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  secondaryButton: {
+    borderWidth: 1,
+    borderColor: "#005A9C",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    marginTop: 16,
+  },
+  secondaryButtonText: { color: "#005A9C", fontSize: 14, fontWeight: "600" },
+  logoutButton: {
+    flexDirection: "row",
+    backgroundColor: "#FFF0F0",
+    borderRadius: 12,
+    paddingVertical: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 10,
+  },
+  logoutText: {
+    color: "#D32F2F",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
 });
