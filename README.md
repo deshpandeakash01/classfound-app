@@ -1,50 +1,82 @@
-# Welcome to your Expo app 👋
+BMSCE Room Booking & Schedule Management System (MVP)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Project Overview
 
-## Get started
+This application is a specialized mobile solution designed for B.M.S. College of Engineering (BMSCE) to solve the "empty classroom discovery" and "adhoc booking" problem. It serves as a bridge between fixed college timetables and dynamic room availability.
 
-1. Install dependencies
+## Technical Architecture
 
-   ```bash
-   npm install
-   ```
+- **Frontend:** React Native (Expo)
+- **Backend/Database:** Supabase (PostgreSQL)
+- **Data Engineering:** Automated PDF extraction via NotebookLM for high-fidelity schedule ingestion.
+- **Authentication:** Supabase Auth with Role-Based Access Control (RBAC).
 
-2. Start the app
+## Database Schema (PostgreSQL)
 
-   ```bash
-   npx expo start
-   ```
+The system operates on four primary entities:
 
-In the output, you'll find options to open the app in a
+### 1. `profiles`
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+Manages user identity and permissions.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- `id`: UUID (Primary Key, links to Supabase Auth)
+- `role`: Enum ('student', 'faculty', 'cr', 'admin') - Governs booking privileges.
+- `email`: User's college/personal email.
 
-## Get a fresh project
+### 2. `rooms`
 
-When you're ready, run:
+Physical infrastructure registry.
 
-```bash
-npm run reset-project
-```
+- `room_name`: e.g., 'APS-104', 'Physics Lab'.
+- `block_name`: e.g., 'APS Block', 'Science Block'.
+- `room_type`: 'classroom' or 'lab'.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 3. `schedules`
 
-## Learn more
+The static truth (College Timetable).
 
-To learn more about developing your project with Expo, look at the following resources:
+- `day_of_week`: 1-6 (Monday-Saturday).
+- `start_time` / `end_time`: 24h format.
+- `section_name`: 46 unique sections across Physics (PA-PX) and Chemistry (CA-CX) cycles.
+- `subject_name`: Linked subject/lab.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### 4. `bookings`
 
-## Join the community
+The dynamic layer (User Reservations).
 
-Join our community of developers creating universal apps.
+- Stores adhoc bookings made by Faculty or CRs that override or supplement the static schedule.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Key Features
+
+### 1. Real-Time Availability Engine
+
+- **Logic:** The app queries `schedules` for the current `day_of_week` and `current_time`. It cross-references this with `bookings`.
+- **Output:** A real-time list of "Free Rooms" currently available in the APS, Science, or Mechanical blocks.
+
+### 2. Multi-Branch Schedule Support
+
+The database contains 100% of the first-year engineering batch data, including specialized branches:
+
+- **Computer Science & AI:** CSE, AIML, CS-IOT, CS-ADS, CSDS, CSBS.
+- **Core Branches:** ECE, EEE, ME, CHE, IEM, CV, BT.
+
+### 3. Smart Lab Mapping
+
+- Automated SQL triggers reassign classes to physical lab buildings based on `subject_name` (e.g., 'PHY (LAB)' automatically maps to 'Physics Lab' room ID regardless of the classroom listed in the raw PDF).
+
+### 4. Role-Based Access (RBAC)
+
+- **Students:** Can view free rooms and their own section's schedule.
+- **CRs (Class Representatives):** Can request bookings for extra classes.
+- **Faculty:** Can override room status for meetings or lab sessions.
+
+## Data Integration Workflow
+
+1. **Extraction:** Raw PDFs processed via LLM into structured SQL values.
+2. **Standardization:** All room names mapped to a physical coordinate system (Floor 0-5, Rooms 01-07).
+3. **Cleanup:** Automated removal of `*R` (Free/Reserved) tags to ensure Saturdays and gap hours are accurately represented as available.
+
+## Deployment Status
+
+- **Backend:** Fully configured on Supabase with master schemas and complete timetable data for 46 sections.
+- **Frontend:** React Native integration using `@supabase/supabase-js` and `expo-secure-store`.

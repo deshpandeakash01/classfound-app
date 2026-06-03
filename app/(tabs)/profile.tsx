@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { supabase } from "../../supabase";
 import { useUser } from "../../UserContext";
+import { assignCRRole } from "../../services/bookingService";
 
 export default function ProfileScreen() {
   const { user } = useUser();
@@ -28,6 +29,23 @@ export default function ProfileScreen() {
       </View>
     );
   }
+
+  const handleAssignCR = async () => {
+    try {
+      if (!studentEmail.trim()) {
+        Alert.alert("Error", "Enter student email");
+        return;
+      }
+
+      await assignCRRole(studentEmail);
+
+      Alert.alert("Success", `${studentEmail} has been promoted to CR`);
+
+      setStudentEmail("");
+    } catch (error: any) {
+      Alert.alert("Error", error.message);
+    }
+  };
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -94,7 +112,9 @@ export default function ProfileScreen() {
                 autoCapitalize="none"
               />
             </View>
-            <TouchableOpacity style={styles.primaryButton}>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={handleAssignCR}>
               <Text style={styles.primaryButtonText}>Assign CR Role</Text>
             </TouchableOpacity>
           </View>

@@ -25,19 +25,16 @@ VALUES
   ('C-208', 'PJA', 75, 'Classroom'),
   ('C-209', 'PJA', 75, 'Classroom'),
   ('C-210', 'PJA', 75, 'Classroom'),
-  ('C-211', 'PJA', 75, 'Classroom'),
-  ('C-212', 'PJA', 75, 'Classroom'),
   ('C-213', 'PJA', 75, 'Classroom'),
+  ('C-214', 'PJA', 75, 'Classroom'),
   ('C-215', 'PJA', 75, 'Classroom'),
   ('C-216', 'PJA', 75, 'Classroom'),
   ('C-217', 'PJA', 75, 'Classroom'),
-  ('C-218', 'PJA', 75, 'Classroom'),
-  ('C-219', 'PJA', 75, 'Classroom'),
+  ('C-220', 'PJA', 75, 'Classroom'),
   ('L-203', 'PJA', 75, 'Lab'),
   ('L-211', 'PJA', 75, 'Lab'),
   ('L-212', 'PJA', 75, 'Lab'),
   ('L-218', 'PJA', 75, 'Lab'),
-  ('L-219', 'PJA', 75, 'Lab'),
 
   -- ==========================================
   -- 3RD FLOOR
@@ -59,7 +56,7 @@ VALUES
   ('L-308', 'PJA', 75, 'Lab'),
   ('T-301', 'PJA', 75, 'Tutorial Room'),
   ('T-302', 'PJA', 75, 'Tutorial Room'),
-  ('T-305', 'PJA', 75, 'Tutorial Room'),
+  ('T-303', 'PJA', 75, 'Tutorial Room'),
   ('ECE Seminar Hall', 'PJA', 75, 'Seminar Hall'),
 
   -- ==========================================
@@ -83,14 +80,14 @@ VALUES
   ('CSE-T-2', 'PJA', 75, 'Tutorial Room'),
   ('CSE-Lab-1', 'PJA', 75, 'Lab'),
   ('CSE-Lab-2', 'PJA', 75, 'Lab'),
-  ('CSE-Lab-3', 'PJA', 75, 'Lab'),
+  ('CSE-Lab-3', 'PJA', 75, 'Lab'),  --seminar hall
 
   -- ==========================================
   -- 5TH FLOOR
   -- ==========================================
-  ('5th PG-CR-1', 'PJA', 75, 'Classroom'),
-  ('5th PG-CR-2', 'PJA', 75, 'Classroom'),
-  ('5th PG-Lab-1', 'PJA', 75, 'Lab'),
+  ('PG-CR-1', 'PJA', 75, 'Classroom'),
+  ('PG-CR-2', 'PJA', 75, 'Classroom'),
+  ('PG-Lab-1', 'PJA', 75, 'Lab'),
   ('ISE Seminar Hall', 'PJA', 75, 'Seminar Hall'),
   ('ISE-Lab-1', 'PJA', 75, 'Lab'),
   ('ISE-Lab-2', 'PJA', 75, 'Lab'),
@@ -117,12 +114,13 @@ VALUES
   ('C-607', 'PJA', 75, 'Classroom'),
   ('CSBS Lab', 'PJA', 75, 'Lab'),
   ('CSDS Lab', 'PJA', 75, 'Lab'),
-  ('ML-Lab-1', 'PJA', 75, 'Lab'),
+  ('ML-Lab-1', 'PJA', 75, 'Lab'),   --C-604
   ('Digital Electronics Lab', 'PJA', 75, 'Lab'),
   ('Project Lab', 'PJA', 75, 'Lab'),
   ('ICB Cyber Lab', 'PJA', 75, 'Lab'),
   ('IoT Lab', 'PJA', 75, 'Lab'),
-  ('AIML Lab-1', 'PJA', 75, 'Lab'),
+  ('AIML Lab', 'PJA', 75, 'Lab'),
+  ('AIDS,DS Lab', 'PJA', 75, 'Lab'),
 
   -- ==========================================
   -- 7TH FLOOR
