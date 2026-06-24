@@ -415,3 +415,14 @@ export async function assignCRRole(studentEmail) {
     throw new Error(error.message);
   }
 }
+export async function assignTeacherRole(email) {
+  const { data, error } = await supabase
+    .from('users') // or whatever your user table is named
+    .update({ role: 'faculty' })
+    .eq('email', email);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+}

@@ -12,77 +12,64 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useUser } from "../../UserContext";
-import { supabase } from "../../supabase"; // Correct root path for your setup
-import { LineChart } from "react-native-chart-kit";
+import { supabase } from "../../supabase"; 
 
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useUser();
 
-  // --- HOURLY GRAPH LOGIC ---
-  const [graphData, setGraphData] = useState({
-    pja: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    aps: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-  });
-  const [loadingGraph, setLoadingGraph] = useState(true);
+  // --- LIVE QUICK STATS LOGIC (Production) ---
+  const [quickStats, setQuickStats] = useState({ pjaFree: 0, apsFree: 0 });
+  const [loadingStats, setLoadingStats] = useState(true);
 
-  const fetchHourlyGraphData = async () => {
-    try {
-      const currentDay = new Date().getDay();
+   useEffect(() => {
+      const fetchQuickStats = async () => {
+        try {
+          setLoadingStats(true);
 
-      const { data: rooms, error } = await supabase
-        .from('rooms')
-        .select(`
-          id, 
-          block_name, 
-          schedules (start_time, end_time)
-        `)
-        .eq('schedules.day_of_week', currentDay);
+          const now = new Date();
+          const currentDate = now.toISOString().split('T')[0];
+          const currentHour = now.getHours();
+          const startTime = `${currentHour.toString().padStart(2, '0')}:00:00`;
+          const endTime = `${(currentHour + 1).toString().padStart(2, '0')}:00:00`;
 
-      if (error) throw error;
-
-      // The hours we want to plot: 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
-      const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
-      let pjaCounts = new Array(10).fill(0);
-      let apsCounts = new Array(10).fill(0);
-
-      // Loop through every room
-      if (rooms) {
-        rooms.forEach(room => {
-          const schedules = room.schedules || [];
-          
-          // Loop through every class scheduled in this room today
-          schedules.forEach(sched => {
-            const startHour = parseInt(sched.start_time.split(':')[0]);
-            const endHour = parseInt(sched.end_time.split(':')[0]);
-
-            // For every hour on our graph, check if this class is happening
-            hours.forEach((h, index) => {
-              if (h >= startHour && h < endHour) {
-                if (room.block_name === 'PJA') pjaCounts[index]++; /* <--- Updated */
-                if (room.block_name === 'APS') apsCounts[index]++; /* <--- Updated */
-              }
+          const { data: freeRooms, error } = await supabase.rpc('get_free_rooms', {
+            p_block: null,      // Passing null to get rooms for ALL blocks
+            p_date: currentDate,
+            p_end: endTime,
+            p_start: startTime
             });
+        if (error) throw error;
+
+        let pjaCount = 0;
+        let apsCount = 0;
+
+        // TypeScript safe iteration
+        if (freeRooms) {
+          freeRooms.forEach((room: { block_name: string }) => {
+            // Check if it includes the word 'APS' to be safe
+            if (room.block_name.includes('APS')) apsCount++; 
+            if (room.block_name.includes('PJA')) pjaCount++;
           });
-        });
-      }
+        }
 
-      setGraphData({ pja: pjaCounts, aps: apsCounts });
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error("Error fetching graph data:", error.message);
-      } else {
-        console.error("An unknown error occurred:", error);
-      }
-    } finally {
-      setLoadingGraph(false);
-    }
-  };
+        setQuickStats({ pjaFree: pjaCount, apsFree: apsCount });
 
-  useEffect(() => {
-    fetchHourlyGraphData();
+      } catch (error) {
+        console.error("Error fetching live availability:", error);
+        setQuickStats({ pjaFree: 0, apsFree: 0 });
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    fetchQuickStats();
+    
+    // Auto-refresh every 5 minutes
+    const intervalId = setInterval(fetchQuickStats, 300000);
+    return () => clearInterval(intervalId);
   }, []);
-  // --- END LOGIC ---
+  // --- END QUICK STATS LOGIC ---
 
   if (!user) {
     return (
@@ -94,9 +81,6 @@ export default function HomeScreen() {
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning,' : hour < 18 ? 'Good afternoon,' : 'Good evening,';
-
-  // Get screen width for the chart to make it responsive
-  const screenWidth = Dimensions.get("window").width;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -117,72 +101,76 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Quick Action Card */}
-        <View style={styles.heroCard}>
-          <View style={styles.heroTextContainer}>
-            <Text style={styles.heroTitle}>Need a space?</Text>
-            <Text style={styles.heroSubtitle}>
-              Find an empty lab or classroom for your group study.
-            </Text>
+        {/* --- ROLE-BASED HERO CARDS --- */}
+        {(user.role === 'student' || user.role === 'cr') && (
+          <View style={styles.heroCard}>
+            <View style={styles.heroTextContainer}>
+              <Text style={styles.heroTitle}>Need a space?</Text>
+              <Text style={styles.heroSubtitle}>
+                Find an empty lab or classroom for your group study.
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.heroButton}
+              onPress={() => router.push("/search")}>
+              <Text style={styles.heroButtonText}>Find a Room Now</Text>
+              <Ionicons name="arrow-forward" size={16} color="#005A9C" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.heroButton}
-            onPress={() => router.push("/search")}>
-            <Text style={styles.heroButtonText}>Find a Room Now</Text>
-            <Ionicons name="arrow-forward" size={16} color="#005A9C" />
-          </TouchableOpacity>
-        </View>
+        )}
 
-       {/* --- HOURLY GRAPH SECTION --- */}
+        {(user.role === 'faculty' || user.role === 'admin') && (
+          <View style={[styles.heroCard, { backgroundColor: '#2E8B57' }]}>
+            <View style={styles.heroTextContainer}>
+              <Text style={styles.heroTitle}>Faculty Dashboard</Text>
+              <Text style={styles.heroSubtitle}>
+                Manage your instant room bookings and review pending CR requests.
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TouchableOpacity
+                style={[styles.heroButton, { flex: 1 }]}
+                onPress={() => router.push("/search")}>
+                <Text style={[styles.heroButtonText, { color: '#2E8B57' }]}>Quick Book</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.heroButton, { flex: 1 }]}
+                onPress={() => router.push("/approvals")}>
+                <Text style={[styles.heroButtonText, { color: '#2E8B57' }]}>Requests</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* --- LIVE QUICK STATS SECTION --- */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Campus Traffic 📈</Text>
-          <Text style={styles.sectionSubtitle}>Hourly occupancy throughout the day</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.sectionTitle}>Live Availability</Text>
+            <View style={styles.liveDot} />
+          </View>
+          <Text style={styles.sectionSubtitle}>Rooms free for the current hour</Text>
         </View>
 
-        <View style={styles.graphCard}>
-          {loadingGraph ? (
-            <ActivityIndicator size="small" color="#005A9C" style={{ padding: 40 }} />
-          ) : (
-            <LineChart
-              data={{
-                labels: ["8a", "9a", "10a", "11a", "12p", "1p", "2p", "3p", "4p", "5p"],
-                datasets: [
-                  {
-                    data: graphData.pja,
-                    color: (opacity = 1) => `rgba(0, 90, 156, ${opacity})`, // PJA - Brand Blue
-                    strokeWidth: 3, 
-                  },
-                  {
-                    data: graphData.aps,
-                    color: (opacity = 1) => `rgba(52, 199, 89, ${opacity})`, // APS - Green
-                    strokeWidth: 3, 
-                  }
-                ],
-                legend: ["PJA Block", "APS Block"]
-              }}
-              width={screenWidth - 72} 
-              height={220}
-              yAxisSuffix=" rm"
-              fromZero={true}
-              chartConfig={{
-                backgroundColor: "#FFF",
-                backgroundGradientFrom: "#FFF",
-                backgroundGradientTo: "#FFF",
-                decimalPlaces: 0,
-                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity * 0.1})`, 
-                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity * 0.5})`, 
-                style: { borderRadius: 16 },
-                propsForDots: {
-                  r: "4",
-                  strokeWidth: "2",
-                }
-              }}
-              bezier 
-              style={styles.chartStyle}
-            />
-          )}
-        </View>
-        {/* --- END GRAPH SECTION --- */}
+        {loadingStats ? (
+          <ActivityIndicator size="large" color="#005A9C" style={{ marginVertical: 40 }} />
+        ) : (
+          <View style={styles.statsRow}>
+            {/* PJA Stat Card */}
+            <View style={[styles.statCard, styles.pjaCard]}>
+              <Text style={styles.statNumber}>{quickStats.pjaFree}</Text>
+              <Text style={styles.statLabel}>PJA Block</Text>
+              <Text style={styles.statSubText}>Rooms Available</Text>
+            </View>
+
+            {/* APS Stat Card */}
+            <View style={[styles.statCard, styles.apsCard]}>
+              <Text style={styles.statNumber}>{quickStats.apsFree}</Text>
+              <Text style={styles.statLabel}>APS Block</Text>
+              <Text style={styles.statSubText}>Rooms Available</Text>
+            </View>
+          </View>
+        )}
+        {/* --- END QUICK STATS SECTION --- */}
 
       </ScrollView>
     </SafeAreaView>
@@ -216,9 +204,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     marginBottom: 30,
-    shadowColor: "#005A9C",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
   },
@@ -227,42 +215,64 @@ const styles = StyleSheet.create({
   heroSubtitle: { color: "#E3F2FD", fontSize: 14, lineHeight: 20 },
   heroButton: {
     backgroundColor: "#FFF",
-    alignSelf: "flex-start",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 24,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
   },
   heroButtonText: { color: "#005A9C", fontWeight: "bold", marginRight: 8 },
 
-  sectionHeader: {
-    marginBottom: 16,
+  sectionHeader: { marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#1A1A1A" },
+  sectionSubtitle: { fontSize: 14, color: "#666", marginTop: 4 },
+  
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 30,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#1A1A1A",
+  statCard: {
+    backgroundColor: '#FFF',
+    width: '48%', 
+    padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+    borderTopWidth: 4, 
   },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: "#666",
+  pjaCard: {
+    borderTopColor: '#005A9C', 
+  },
+  apsCard: {
+    borderTopColor: '#34C759', 
+  },
+  statNumber: {
+    fontSize: 42,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  statSubText: {
+    fontSize: 12,
+    color: '#888',
     marginTop: 4,
   },
-  graphCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-    marginBottom: 20,
-    alignItems: "center", 
-  },
-  chartStyle: {
-    marginVertical: 8,
-    borderRadius: 16,
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF3B30',
+    marginLeft: 8,
   }
 });
