@@ -320,7 +320,7 @@ export default function SearchScreen() {
                   <TouchableOpacity
                     style={[
                       styles.bookBtn,
-                      user?.role === "faculty"
+                      (user?.role === "faculty" || user?.role === "admin")
                         ? styles.facultyBtn
                         : styles.crBtn,
                     ]}
@@ -342,7 +342,7 @@ export default function SearchScreen() {
                         styles.bookBtnText,
                         user?.role === "faculty" && styles.facultyBtnText,
                       ]}>
-                      {user?.role === "faculty"
+                      {(user?.role === "faculty" || user?.role === "admin")
                         ? "Book Instantly"
                         : "Request Booking"}
                     </Text>

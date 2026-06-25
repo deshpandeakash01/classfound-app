@@ -215,7 +215,7 @@ export default function ProfileScreen() {
                     <Ionicons name="document-text-outline" size={24} color="#005A9C" />
                     <Text style={styles.linkButtonText}>NoteGo</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.linkButton} onPress={() => Linking.openURL('https://contineo.in/')}>
+                  <TouchableOpacity style={styles.linkButton} onPress={() => Linking.openURL('https://students.bmsce.ac.in/parents/index.php')}>
                     <Ionicons name="school-outline" size={24} color="#005A9C" />
                     <Text style={styles.linkButtonText}>Contineo</Text>
                   </TouchableOpacity>
